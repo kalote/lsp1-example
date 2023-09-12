@@ -26,10 +26,10 @@ contract LSP1URDForwarder is
     ERC165,
     ILSP1UniversalReceiver
 {
-    // the receiver address
+    // When UP address receive token, send X% to _recipient 
     mapping (address => address) royaltyRecipients;
 
-    // the contracts that are allowed
+    // For each UP, setup a list of authorized LSP7 tokens
     mapping(address => mapping (address => bool)) allowlist;
 
     constructor(address _royaltyRecipient, address[] memory tokenAddresses) {
@@ -98,7 +98,29 @@ contract LSP1URDForwarder is
 
                 if (amount > 10) {
                     uint256 tokensToTransfer = amount / 10;
-                    bytes memory encodededTx = abi.encodeWithSelector(
+                    
+                    // --------
+                    // Method 1
+                    // --------
+
+                    // authorize this contract to spend on behalf 
+                    // of the UP (msg.sender) on the LSP7
+                    bytes memory authorizeTx = abi.encodeWithSelector(
+                        ILSP7DigitalAsset.authorizeOperator.selector,
+                        address(this),
+                        tokensToTransfer,
+                        ""
+                    );
+                    IERC725X(msg.sender).execute(0, notifier, 0, authorizeTx);
+
+                    // execute the transfer
+                    // ILSP7DigitalAsset(notifier).transfer(msg.sender, royaltyRecipients[msg.sender], tokensToTransfer, true, "");
+
+                    // --------
+                    // Method 2
+                    // --------
+                    // The URD needs to be added as a LSP6 controller
+                    bytes memory encodedTx = abi.encodeWithSelector(
                         ILSP7DigitalAsset.transfer.selector,
                         msg.sender,
                         royaltyRecipients[msg.sender],
@@ -107,7 +129,9 @@ contract LSP1URDForwarder is
                         ""
                     );
 
-                    IERC725X(msg.sender).execute(0, notifier, 0, encodededTx);
+                    IERC725X(msg.sender).execute(0, notifier, 0, encodedTx);
+
+
                 } else {
                     return "amount is too small (< 10)";
                 }

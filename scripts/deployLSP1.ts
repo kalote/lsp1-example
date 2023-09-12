@@ -4,15 +4,13 @@ import * as dotenv from 'dotenv';
 import * as LSP0ABI from '@lukso/lsp-smart-contracts/artifacts/LSP0ERC725Account.json';
 import * as LSP7ABI from '@lukso/lsp-smart-contracts/artifacts/LSP7Mintable.json';
 import { ERC725YDataKeys, LSP1_TYPE_IDS, PERMISSIONS } from '@lukso/lsp-smart-contracts';
+import { CustomToken__factory } from '../typechain-types';
 
 // load env vars
 dotenv.config();
 
-const recipientAddr = '0x0183fCbeDCa8ab45c8eD688cD28a6DBf548efC64';
-const contractsAddr = [
-  '0xc3eb450aa16153c948ddcc6f42a76bcf856ea92d',
-  '0x71c72c837AE9C7191Ec0E335b523a6494b2ebc0D',
-];
+const recipientAddr = '0x32c3f2A463d7566e120B7D5FC7A1368f462C6029';
+const contractsAddr = ['0xBD79438C04d768BACb0C5d110eBa5D201D780A87'];
 
 /**
  * In this script, we will:
@@ -42,7 +40,7 @@ async function main() {
 
   // // we need to encode the constructor parameters and add them to the contract bytecode
   // const abiCoder = new ethers.AbiCoder();
-  // const params = abiCoder.encode(['address', 'address[]'], [recipientAddr, contractsAddr]).substring(2);
+  // const params = abiCoder.encode(['address', 'address[]'], [recipientAddr, contractsAddr]).slice(2);
   // const fullBytecode = CustomURDBytecode + params;
 
   // // get the address of the contract that will be created
@@ -55,16 +53,7 @@ async function main() {
   // await tx1.wait();
 
   // console.log('✅ Custom URD successfully deployed at address: ', CustomURDAddress);
-  const CustomURDAddress = '0xa04d2e4a104c698a11e2f0608af0bfa18f3715a0';
-
-  // we need to approve our new CustomURD contract to spend our tokens
-  // load the LSP7
-  const LSP7Contract = new ethers.Contract(contractsAddr[0], LSP7ABI.abi, provider);
-  const authorizeTx = await LSP7Contract.connect(signer).getFunction('authorizeOperator')(
-    CustomURDAddress,
-    '200000000000000000000000000000000000000000',
-  );
-  authorizeTx.wait();
+  const CustomURDAddress = '0x0ECe8Bb3CB94470Ed1626AB572f4E9Bc4e03dB03';
 
   // --------------
   // SET DATA BATCH
@@ -90,13 +79,13 @@ async function main() {
   const addrPermNewLengthHex = '0x' + Number(addrPermNewLength).toString(16).padStart(32, '0');
 
   // - the index of the new perm
-  const newElementIndexHex = addrPermCurrentLengthHex.substring(2);
+  const newElementIndexHex = addrPermCurrentLengthHex.slice(2);
 
   const dataKeys = [
     URDdataKey,
     ERC725YDataKeys.LSP6['AddressPermissions[]'].length,
     ERC725YDataKeys.LSP6['AddressPermissions[]'].index + newElementIndexHex,
-    ERC725YDataKeys.LSP6['AddressPermissions:Permissions'] + CustomURDAddress.substring(2),
+    ERC725YDataKeys.LSP6['AddressPermissions:Permissions'] + CustomURDAddress.slice(2),
   ];
   const dataValues = [CustomURDAddress, addrPermNewLengthHex, CustomURDAddress, PERMISSIONS.SUPER_CALL];
 
