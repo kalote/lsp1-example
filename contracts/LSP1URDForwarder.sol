@@ -27,38 +27,38 @@ contract LSP1URDForwarder is
     ILSP1UniversalReceiver
 {
     // the receiver address
-    address public royaltyRecipient;
-
-    // the deployer / owner
-    address public owner;
+    mapping (address => address) royaltyRecipients;
 
     // the contracts that are allowed
-    mapping(address => bool) allowlist;
-
-    modifier onlyOwner {
-        require(msg.sender == owner, "Not owner");
-        _;
-    }
+    mapping(address => mapping (address => bool)) allowlist;
 
     constructor(address _royaltyRecipient, address[] memory tokenAddresses) {
-        royaltyRecipient = _royaltyRecipient;
-        owner = msg.sender;
+        // we set the recipient & addresses of the deployer for practicality 
+        royaltyRecipients[msg.sender] = _royaltyRecipient;
 
         for (uint256 i = 0; i < tokenAddresses.length; i++) {
-            allowlist[tokenAddresses[i]] = true;
+            allowlist[msg.sender][tokenAddresses[i]] = true;
         }
     }
 
-    function addAddress(address token) public onlyOwner {
-        allowlist[token] = true;
+    function addAddress(address token) public {
+        allowlist[msg.sender][token] = true;
     }
 
-    function removeAddress(address token) public onlyOwner {
-        allowlist[token] = false;
+    function setRecipient(address _recipient) public {
+        royaltyRecipients[msg.sender] = _recipient;
+    }
+
+    function removeAddress(address token) public {
+        allowlist[msg.sender][token] = false;
     }
 
     function getAddressStatus(address token) public view returns (bool) {
-        return allowlist[token];
+        return allowlist[msg.sender][token];
+    }
+
+    function getRecipient() public view returns (address) {
+        return royaltyRecipients[msg.sender];
     }
 
     function universalReceiver(
@@ -87,28 +87,31 @@ contract LSP1URDForwarder is
             }
         }
 
+        // If the URD has been called because we received a LSP7 token
         if (typeId == _TYPEID_LSP7_TOKENSRECIPIENT) {
-            if (allowlist[notifier]) {
+            // if the address of the LSP7 is whitelisted
+            if (allowlist[msg.sender][notifier]) {
                 (, , uint256 amount, ) = abi.decode(
                     data,
                     (address, address, uint256, bytes)
                 );
 
-                // add a check for token amount
-                uint256 tokensToTransfer = amount / 10;
+                if (amount > 10) {
+                    uint256 tokensToTransfer = amount / 10;
+                    bytes memory encodededTx = abi.encodeWithSelector(
+                        ILSP7DigitalAsset.transfer.selector,
+                        msg.sender,
+                        royaltyRecipients[msg.sender],
+                        tokensToTransfer,
+                        true,
+                        ""
+                    );
 
-                bytes memory encodededTx = abi.encodeWithSelector(
-                    ILSP7DigitalAsset.transfer.selector,
-                    // from Andreas: BE CAREFUL MAN, this is not what you want here
-                    // (msg.sender? who is that? my UP? the LSP7 contract?)
-                    msg.sender,
-                    royaltyRecipient,
-                    tokensToTransfer,
-                    true,
-                    ""
-                );
+                    IERC725X(msg.sender).execute(0, notifier, 0, encodededTx);
+                } else {
+                    return "amount is too small (< 10)";
+                }
 
-                IERC725X(msg.sender).execute(0, notifier, 0, encodededTx);
             } else {
                 return "Token not in allowlist";
             }
