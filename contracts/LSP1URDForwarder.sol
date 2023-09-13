@@ -37,14 +37,14 @@ contract LSP1URDForwarder is
     );
 
     // When UP address receive token, send X% to _recipient 
-    mapping (address => address) royaltyRecipients;
+    mapping (address => address) recipients;
 
     // For each UP, map of a list of authorized LSP7 tokens
     mapping(address => mapping (address => bool)) allowlist;
 
-    constructor(address _royaltyRecipient, address[] memory tokenAddresses) {
+    constructor(address _recipient, address[] memory tokenAddresses) {
         // we set the recipient & addresses of the deployer for simplicity 
-        royaltyRecipients[msg.sender] = _royaltyRecipient;
+        recipients[msg.sender] = _recipient;
 
         for (uint256 i = 0; i < tokenAddresses.length; i++) {
             allowlist[msg.sender][tokenAddresses[i]] = true;
@@ -56,7 +56,7 @@ contract LSP1URDForwarder is
     }
 
     function setRecipient(address _recipient) public {
-        royaltyRecipients[msg.sender] = _recipient;
+        recipients[msg.sender] = _recipient;
     }
 
     function removeAddress(address token) public {
@@ -68,7 +68,7 @@ contract LSP1URDForwarder is
     }
 
     function getRecipient() public view returns (address) {
-        return royaltyRecipients[msg.sender];
+        return recipients[msg.sender];
     }
 
     function universalReceiver(
@@ -86,7 +86,7 @@ contract LSP1URDForwarder is
             typeId,
             data
         );
-        
+
         // CHECK that the msg.sender is a LSP0 (UniversalProfile)
         if (
             ERC165Checker.supportsERC165InterfaceUnchecked(
@@ -131,7 +131,7 @@ contract LSP1URDForwarder is
                         bytes memory encodedTx = abi.encodeWithSelector(
                             ILSP7DigitalAsset.transfer.selector,
                             msg.sender,
-                            royaltyRecipients[msg.sender],
+                            recipients[msg.sender],
                             tokensToTransfer,
                             true,
                             ""

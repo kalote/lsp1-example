@@ -7,7 +7,7 @@ import { ERC725YDataKeys, LSP1_TYPE_IDS, PERMISSIONS } from '@lukso/lsp-smart-co
 // load env vars
 dotenv.config();
 
-const recipientAddr = '0x32c3f2A463d7566e120B7D5FC7A1368f462C6029';
+// You can update the value of the allowed LSP7 token here
 const contractsAddr = [
   '0xBD79438C04d768BACb0C5d110eBa5D201D780A87',
   '0xdb9183dda773285d5a4c5b1067a78c9f64fb26e6',
@@ -37,24 +37,26 @@ async function main() {
   // DEPLOY URD
   // ----------
 
-  // const CustomURDBytecode = hre.artifacts.readArtifactSync('LSP1URDForwarder').bytecode;
+  const CustomURDBytecode = hre.artifacts.readArtifactSync('LSP1URDForwarder').bytecode;
 
-  // // we need to encode the constructor parameters and add them to the contract bytecode
-  // const abiCoder = new ethers.AbiCoder();
-  // const params = abiCoder.encode(['address', 'address[]'], [recipientAddr, contractsAddr]).slice(2);
-  // const fullBytecode = CustomURDBytecode + params;
+  // we need to encode the constructor parameters and add them to the contract bytecode
+  const abiCoder = new ethers.AbiCoder();
+  const params = abiCoder
+    .encode(['address', 'address[]'], [process.env.UP_RECEIVER as string, contractsAddr])
+    .slice(2);
+  const fullBytecode = CustomURDBytecode + params;
 
-  // // get the address of the contract that will be created
-  // const CustomURDAddress = await UP.connect(signer)
-  //   .getFunction('execute')
-  //   .staticCall(1, ethers.ZeroAddress, 0, fullBytecode);
+  // get the address of the contract that will be created
+  const CustomURDAddress = await UP.connect(signer)
+    .getFunction('execute')
+    .staticCall(1, ethers.ZeroAddress, 0, fullBytecode);
 
-  // // deploy LSP1URDForwarder as the UP (signed by the browser extension controller)
-  // const tx1 = await UP.connect(signer).getFunction('execute')(1, ethers.ZeroAddress, 0, fullBytecode);
-  // await tx1.wait();
+  // deploy LSP1URDForwarder as the UP (signed by the browser extension controller)
+  const tx1 = await UP.connect(signer).getFunction('execute')(1, ethers.ZeroAddress, 0, fullBytecode);
+  await tx1.wait();
 
-  // console.log('✅ Custom URD successfully deployed at address: ', CustomURDAddress);
-  const CustomURDAddress = '0x19ba9f0f78ca4d76c5aef4398c4735bfd7edc1ab';
+  console.log('✅ Custom URD successfully deployed at address: ', CustomURDAddress);
+
   // --------------
   // SET DATA BATCH
   // --------------
@@ -66,20 +68,25 @@ async function main() {
     LSP1_TYPE_IDS.LSP7Tokens_RecipientNotification.slice(2).slice(0, 40);
 
   // we will update the keys for:
-  // - custom URD for specific TYPE_ID (with our custom URD contract address)
-  // - permission of this custom URD contract (this will create a new controller in the Browser Extension) (permission SUPER_CALL + REENTRANT)
+  // - the custom URD of specific TYPE_ID (with our custom URD contract address)
+  // - the permission of this custom URD contract (this will create a new controller in the Browser Extension)
   const dataKeys = [
     URDdataKey,
     ERC725YDataKeys.LSP6['AddressPermissions:Permissions'] + CustomURDAddress.slice(2),
   ];
-  const dataValues = [CustomURDAddress, PERMISSIONS.SUPER_CALL];
 
-  console.log('keys: ', dataKeys);
-  console.log('values: ', dataValues);
-  console.log(PERMISSIONS.SUPER_CALL + PERMISSIONS.REENTRANCY);
+  // Calculate the correct permission (SUPER_CALL + REENTRANCY)
+  const permInt = parseInt(PERMISSIONS.SUPER_CALL, 16) ^ parseInt(PERMISSIONS.REENTRANCY, 16);
+  const permHex = '0x' + permInt.toString(16).padStart(64, '0');
+
+  const dataValues = [CustomURDAddress, permHex];
+
+  // console.log('keys: ', dataKeys);
+  // console.log('values: ', dataValues);
+
   // execute the tx
-  // const setDataBatchTx = await UP.connect(signer).getFunction('setDataBatch')(dataKeys, dataValues);
-  // await setDataBatchTx.wait();
+  const setDataBatchTx = await UP.connect(signer).getFunction('setDataBatch')(dataKeys, dataValues);
+  await setDataBatchTx.wait();
 }
 
 main()
