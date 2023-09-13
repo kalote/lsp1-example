@@ -6,7 +6,7 @@ import "@lukso/lsp-smart-contracts/contracts/LSP7DigitalAsset/extensions/LSP7Bur
 
 contract CustomToken is LSP7Mintable, LSP7Burnable {
   // for more informations, check https://github.com/lukso-network/LIPs/blob/main/LSPs/LSP-7-DigitalAsset.md
-  constructor() LSP7Mintable("My Custom Token", "MCT", msg.sender, false) {
+  constructor() LSP7Mintable("My USDT", "MUSD", msg.sender, false) {
     mint(msg.sender, 20000 * 10**decimals(), true, '0x' );
   }
 }
