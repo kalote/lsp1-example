@@ -1,23 +1,30 @@
 import hre from 'hardhat';
 import { ethers } from 'hardhat';
 import * as dotenv from 'dotenv';
-import * as LSP0ABI from '@lukso/lsp-smart-contracts/artifacts/LSP0ERC725Account.json';
 
 dotenv.config();
 
+const { UP_ADDR, PRIVATE_KEY } = process.env;
+
 async function main() {
+  // ----------
+  // BASE SETUP
+  // ----------
+
   // setup provider
   const provider = new ethers.JsonRpcProvider('https://rpc.testnet.lukso.network');
   // setup signer (the browser extension controller)
-  const signer = new ethers.Wallet(process.env.PRIVATE_KEY as string, provider);
-  console.log('Deploying contracts with EOA: ', signer.address);
-
+  const signer = new ethers.Wallet(PRIVATE_KEY as string, provider);
   // load the associated UP
-  const UP = new ethers.Contract(process.env.UP_ADDR as string, LSP0ABI.abi, signer);
+  const UP = await ethers.getContractAt('UniversalProfile', UP_ADDR as string);
+  console.log('🔑 EOA: ', signer.address);
+  console.log('🆙 Universal Profile: ', await UP.getAddress());
 
-  /**
-   * CustomToken LSP7 Token
-   */
+  // ------------------------
+  // DEPLOY CUSTOM LSP7 TOKEN
+  // ------------------------
+
+  console.log('⏳ Deploying the custom Token');
   const CustomTokenBytecode = hre.artifacts.readArtifactSync('CustomToken').bytecode;
 
   // get the address of the contract that will be created
@@ -26,10 +33,10 @@ async function main() {
     .staticCall(1, ethers.ZeroAddress, 0, CustomTokenBytecode);
 
   // deploy CustomToken as the UP (signed by the browser extension controller)
-  const tx1 = await UP.connect(signer).getFunction('execute')(1, ethers.ZeroAddress, 0, CustomTokenBytecode);
+  const tx1 = await UP.connect(signer).execute(1, ethers.ZeroAddress, 0, CustomTokenBytecode);
   await tx1.wait();
 
-  console.log('CustomToken address: ', CustomTokenAddress);
+  console.log('✅ Custom Token successfully deployed at address: ', CustomTokenAddress);
 }
 
 main()
