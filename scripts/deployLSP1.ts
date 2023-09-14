@@ -1,11 +1,9 @@
-import hre from 'hardhat';
 import { ethers } from 'hardhat';
-import * as dotenv from 'dotenv';
-import * as LSP0ABI from '@lukso/lsp-smart-contracts/artifacts/LSP0ERC725Account.json';
+import 'dotenv/config';
 import { ERC725YDataKeys, LSP1_TYPE_IDS, PERMISSIONS } from '@lukso/lsp-smart-contracts';
 
 // load env vars
-dotenv.config();
+const { UP_ADDR, UP_RECEIVER } = process.env;
 
 // You can update the value of the allowed LSP7 token here
 const contractsAddr = [
@@ -24,36 +22,34 @@ async function main() {
   // BASE SETUP
   // ----------
 
-  // setup provider
-  const provider = new ethers.JsonRpcProvider('https://rpc.testnet.lukso.network');
   // setup signer (the browser extension controller)
-  const signer = new ethers.Wallet(process.env.PRIVATE_KEY as string, provider);
+  const signer = await ethers.provider.getSigner();
   console.log('Deploying contracts with EOA: ', signer.address);
 
   // load the associated UP
-  const UP = new ethers.Contract(process.env.UP_ADDR as string, LSP0ABI.abi, signer);
-
+  const UP = await ethers.getContractAt('UniversalProfile', UP_ADDR as string);
   // ----------
   // DEPLOY URD
   // ----------
 
-  const CustomURDBytecode = hre.artifacts.readArtifactSync('LSP1URDForwarder').bytecode;
+  const CustomURDBytecode = (await ethers.getContractFactory('LSP1URDForwarder')).bytecode;
 
   // we need to encode the constructor parameters and add them to the contract bytecode
   const abiCoder = new ethers.AbiCoder();
-  const params = abiCoder
-    .encode(['address', 'address[]'], [process.env.UP_RECEIVER as string, contractsAddr])
-    .slice(2);
+  const params = abiCoder.encode(['address', 'address[]'], [UP_RECEIVER as string, contractsAddr]).slice(2);
   const fullBytecode = CustomURDBytecode + params;
 
   // get the address of the contract that will be created
-  const CustomURDAddress = await UP.connect(signer)
-    .getFunction('execute')
-    .staticCall(1, ethers.ZeroAddress, 0, fullBytecode);
+  const CustomURDAddress = await UP.connect(signer).execute.staticCall(
+    1,
+    ethers.ZeroAddress,
+    0,
+    fullBytecode,
+  );
 
   // deploy LSP1URDForwarder as the UP (signed by the browser extension controller)
-  const tx1 = await UP.connect(signer).getFunction('execute')(1, ethers.ZeroAddress, 0, fullBytecode);
-  await tx1.wait();
+  const tx = await UP.connect(signer).execute(1, ethers.ZeroAddress, 0, fullBytecode);
+  await tx.wait();
 
   console.log('✅ Custom URD successfully deployed at address: ', CustomURDAddress);
 
@@ -85,7 +81,7 @@ async function main() {
   // console.log('values: ', dataValues);
 
   // execute the tx
-  const setDataBatchTx = await UP.connect(signer).getFunction('setDataBatch')(dataKeys, dataValues);
+  const setDataBatchTx = await UP.connect(signer).setDataBatch(dataKeys, dataValues);
   await setDataBatchTx.wait();
 }
 

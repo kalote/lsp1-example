@@ -1,0 +1,1 @@
+import {UniversalProfile} from '@lukso/lsp-smart-contracts/contracts/UniversalProfile.sol';
