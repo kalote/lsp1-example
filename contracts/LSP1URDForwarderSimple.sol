@@ -19,57 +19,59 @@ import "@lukso/lsp-smart-contracts/contracts/LSP0ERC725Account/LSP0Constants.sol
 // errors
 import "@lukso/lsp-smart-contracts/contracts/LSP1UniversalReceiver/LSP1Errors.sol";
 
-contract LSP1URDForwarder is
+contract LSP1URDForwarderSimple is
     ERC165,
     ILSP1UniversalReceiver
 {
-    // For each UP, we set a recipient
-    mapping (address => address) recipients;
+    // Owner
+    address owner;
     
-    // For each UP, we set a percentage to send to recipient
-    mapping (address => uint256) percentages;
+    // Set a recipient
+    address public recipient;
+    
+    // Set a percentage to send to recipient
+    uint256 public percentage;
 
-    // For each UP, we set a list of authorized LSP7 tokens
-    mapping(address => mapping (address => bool)) allowlist;
+    // Set a mapping of authorized LSP7 tokens
+    mapping (address => bool) allowlist;
 
-    // we set the recipient & percentage & addresses of the deployer in the constructor for simplicity 
+    // CHECK onlyOwner 
+    modifier onlyOwner {
+        require(msg.sender == owner, "Not the owner");
+        _;
+    }
+
+    // we set the recipient & percentage & allowedAddresses of the deployer in the constructor for simplicity 
     constructor(address _recipient, uint256 _percentage, address[] memory tokenAddresses) {
         require(_percentage < 100, "Percentage should be < 100");
-        recipients[msg.sender] = _recipient;
-        percentages[msg.sender] = _percentage;
+        recipient = _recipient;
+        percentage = _percentage;
+        owner = msg.sender;
 
         for (uint256 i = 0; i < tokenAddresses.length; i++) {
-            allowlist[msg.sender][tokenAddresses[i]] = true;
+            allowlist[tokenAddresses[i]] = true;
         }
     }
 
-    function addAddress(address token) public {
-        allowlist[msg.sender][token] = true;
+    function addAddress(address token) public onlyOwner {
+        allowlist[token] = true;
     }
 
-    function setRecipient(address _recipient) public {
-        recipients[msg.sender] = _recipient;
+    function setRecipient(address _recipient) public onlyOwner {
+        recipient = _recipient;
     }
     
-    function setPercentage(uint256 _percentage) public {
+    function setPercentage(uint256 _percentage) public onlyOwner {
         require(_percentage < 100, "Percentage should be < 100");
-        percentages[msg.sender] = _percentage;
+        percentage = _percentage;
     }
 
-    function removeAddress(address token) public {
-        allowlist[msg.sender][token] = false;
+    function removeAddress(address token) public onlyOwner {
+        allowlist[token] = false;
     }
 
     function getAddressStatus(address token) public view returns (bool) {
-        return allowlist[msg.sender][token];
-    }
-
-    function getRecipient() public view returns (address) {
-        return recipients[msg.sender];
-    }
-    
-    function getPercentage() public view returns (uint256) {
-        return percentages[msg.sender];
+        return allowlist[token];
     }
 
     function universalReceiver(
@@ -109,7 +111,7 @@ contract LSP1URDForwarder is
             // CHECK that the URD has been called because we received a LSP7 token
             if (typeId == _TYPEID_LSP7_TOKENSRECIPIENT) {
                 // CHECK that the address of the LSP7 is whitelisted
-                if (allowlist[msg.sender][notifier]) {
+                if (allowlist[notifier]) {
                     // extract data (we only need the amount that was transfered / minted)
                     (, , uint256 amount, ) = abi.decode(
                         data,
@@ -120,7 +122,7 @@ contract LSP1URDForwarder is
                     if (amount < 100) {
                         return "Amount is too low (< 100)";
                     } else {
-                        uint256 tokensToTransfer = (amount * percentages[msg.sender]) / 100;
+                        uint256 tokensToTransfer = (amount * percentage) / 100;
 
                         // Requirements for direct Transfer via UP:
                         // - setData on PREFIX + _TYPEID_LSP7_TOKENSRECIPIENT with custom URD address
@@ -128,7 +130,7 @@ contract LSP1URDForwarder is
                         bytes memory encodedTx = abi.encodeWithSelector(
                             ILSP7DigitalAsset.transfer.selector,
                             msg.sender,
-                            recipients[msg.sender],
+                            recipient,
                             tokensToTransfer,
                             true,
                             ""
