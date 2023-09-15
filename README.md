@@ -17,13 +17,14 @@ This example requires 4 environment variables. To set it up, use `cp .env.exampl
 
 ## Contracts
 
-There are 3 contracts in the `contracts/` folder:
+There are 4 contracts in the `contracts/` folder:
 
 - MyCustomToken.sol => a simple LSP7 token
 - MockContract.sol => used to generate the `universalProfile` TypeScript type
-- LSP1URDForwarder.sol => the custom Universal Receiver Delegate contract
+- LSP1URDForwarder.sol => the custom Universal Receiver Delegate contract (can be used by multiple UP)
+- LSP1URDForwarderSimple.sol => a simpler version of the custom Universal Receiver Delegate contract (can only be used by 1 UP)
 
-The `LSP1URDForwarder.sol` contract takes 3 parameters:
+The `LSP1URDForwarder.sol` and `LSP1URDForwarderSimple.sol` contracts takes 3 parameters:
 
 - the `recipient` address (e.g., the UP that will receive a part of the token)
 - the `percentage` number (e.g., what %age of the received tokens that will be transfered)
@@ -31,10 +32,11 @@ The `LSP1URDForwarder.sol` contract takes 3 parameters:
 
 ## Deploy
 
-There are 2 deployment scripts in the `scripts/` folder:
+There are 3 deployment scripts in the `scripts/` folder:
 
 - deployToken.ts => deploy the simple custom LSP7 token
 - deployLSP1.ts => deploy the custom URD and register it on the `UP_ADDR`
+- deployLSP1.ts => deploy the simple custom URD and register it on the `UP_ADDR`
 
 ## Run
 
@@ -45,4 +47,5 @@ npm run build
 npx hardhat --network luksoTestnet run scripts/deployToken.ts # This will deploy a custom LSP7 Token
 # update scripts/deployLSP1.ts with the deployed LSP7 token or with any LSP7 token addresses
 npx hardhat --network luksoTestnet run scripts/deployLSP1.ts # This will deploy the Custom URD and update your UP to use it
+npx hardhat --network luksoTestnet run scripts/deployLSP1Simple.ts # This will deploy the Simpler Custom URD and update your UP to use it
 ```
