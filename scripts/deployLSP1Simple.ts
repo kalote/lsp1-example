@@ -7,7 +7,7 @@ import { ERC725YDataKeys, LSP1_TYPE_IDS, PERMISSIONS } from '@lukso/lsp-smart-co
 dotenv.config();
 
 // You can update the value of the allowed LSP7 token
-const contractsAddr = ['0x63890ea231c6e966142288d805b9f9de7e0e5927'];
+const contractsAddr = ['0x198DF891ed2E89F95822d0aE26929Dc7Df785D0F'];
 
 // Update those values in the .env file
 const { UP_ADDR, PRIVATE_KEY, UP_RECEIVER, PERCENTAGE } = process.env;
@@ -47,9 +47,12 @@ async function main() {
   const fullBytecode = CustomURDBytecode + params;
 
   // get the address of the contract that will be created
-  const CustomURDAddress = await UP.connect(signer)
-    .getFunction('execute')
-    .staticCall(1, ethers.ZeroAddress, 0, fullBytecode);
+  const CustomURDAddress = await UP.connect(signer).execute.staticCall(
+    1,
+    ethers.ZeroAddress,
+    0,
+    fullBytecode,
+  );
 
   // deploy LSP1URDForwarder as the UP (signed by the browser extension controller)
   const tx1 = await UP.connect(signer).execute(1, ethers.ZeroAddress, 0, fullBytecode);
@@ -86,7 +89,7 @@ async function main() {
   // console.log('values: ', dataValues);
 
   // execute the tx
-  const setDataBatchTx = await UP.connect(signer).getFunction('setDataBatch')(dataKeys, dataValues);
+  const setDataBatchTx = await UP.connect(signer).setDataBatch(dataKeys, dataValues);
   await setDataBatchTx.wait();
   console.log('✅ Custom URD has been correctly registered on the UP');
 }
