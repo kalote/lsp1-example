@@ -85,7 +85,7 @@ async function main() {
   // console.log('values: ', dataValues);
 
   // execute the tx
-  const setDataBatchTx = await UP.connect(signer).getFunction('setDataBatch')(dataKeys, dataValues);
+  const setDataBatchTx = await UP.connect(signer).setDataBatch(dataKeys, dataValues);
   await setDataBatchTx.wait();
   console.log('✅ Custom URD has been correctly registered on the UP');
 }

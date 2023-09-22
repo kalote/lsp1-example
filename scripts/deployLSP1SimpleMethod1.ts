@@ -7,15 +7,15 @@ import { ERC725YDataKeys, LSP1_TYPE_IDS, PERMISSIONS } from '@lukso/lsp-smart-co
 dotenv.config();
 
 // You can update the value of the allowed LSP7 token
-const contractsAddr = ['0x198DF891ed2E89F95822d0aE26929Dc7Df785D0F'];
+const contractsAddr = ['0x303ae9b19ee9b6fda8c710b7f74b0582bbcc7b81'];
 
 // Update those values in the .env file
 const { UP_ADDR, PRIVATE_KEY, UP_RECEIVER, PERCENTAGE } = process.env;
 
 /**
  * In this script, we will:
- * - deploy our URD implementation (LSP1URDForwarderSimple.sol)
- * - setDataBatch on the UP to register URD implementation + permission for URD contract
+ * - deploy our URD implementation (method1/LSP1URDForwarderSimple.sol)
+ * - setDataBatch on the UP to register URD implementation address + permission for URD contract
  * (Don't forget to give your EOA Add / Edit notification and automation)
  */
 async function main() {
@@ -37,7 +37,9 @@ async function main() {
   // ----------
 
   console.log('⏳ Deploying the custom URD');
-  const CustomURDBytecode = hre.artifacts.readArtifactSync('LSP1URDForwarderSimple').bytecode;
+  const CustomURDBytecode = hre.artifacts.readArtifactSync(
+    'contracts/method1/LSP1URDForwarderSimple.sol:LSP1URDForwarderSimple',
+  ).bytecode;
 
   // we need to encode the constructor parameters and add them to the contract bytecode
   const abiCoder = new ethers.AbiCoder();
@@ -72,7 +74,7 @@ async function main() {
     LSP1_TYPE_IDS.LSP7Tokens_RecipientNotification.slice(2).slice(0, 40);
 
   // we will update the keys for:
-  // - the custom URD of specific TYPE_ID (with our custom URD contract address)
+  // - the custom URD of specific TYPE_ID (with our custom URD cotract address)
   // - the permission of this custom URD contract (this will create a new controller in the Browser Extension)
   const dataKeys = [
     URDdataKey,

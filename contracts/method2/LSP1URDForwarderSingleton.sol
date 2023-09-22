@@ -125,18 +125,7 @@ contract LSP1URDForwarder is
         } else {
             uint256 tokensToTransfer = (amount * percentages[msg.sender]) / 100;
 
-            // Requirements for direct Transfer via UP:
-            // - setData on PREFIX + _TYPEID_LSP7_TOKENSRECIPIENT with custom URD address
-            // - setData on AddressPermissions:Permissions<customURDAddress> (=create a controller) with SUPER_CALL
-            bytes memory encodedTx = abi.encodeWithSelector(
-                ILSP7DigitalAsset.transfer.selector,
-                msg.sender,
-                recipients[msg.sender],
-                tokensToTransfer,
-                true,
-                ""
-            );
-            IERC725X(msg.sender).execute(0, notifier, 0, encodedTx);
+            ILSP7DigitalAsset(notifier).transfer(msg.sender, recipients[msg.sender], tokensToTransfer, true, "");
             return "";
         }
     }

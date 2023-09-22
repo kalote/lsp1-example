@@ -94,6 +94,7 @@ contract LSP1URDForwarderSimple is
         ) {
             return "Caller is not a LSP0";
         }
+
         // GET the notifier (e.g., the LSP7 Token) from the calldata
         address notifier = address(bytes20(msg.data[msg.data.length - 52:]));
 
@@ -128,18 +129,7 @@ contract LSP1URDForwarderSimple is
         } else {
             uint256 tokensToTransfer = (amount * percentage) / 100;
 
-            // Requirements for direct Transfer via UP:
-            // - setData on PREFIX + _TYPEID_LSP7_TOKENSRECIPIENT with custom URD address
-            // - setData on AddressPermissions:Permissions<customURDAddress> (=create a controller) with SUPER_CALL
-            bytes memory encodedTx = abi.encodeWithSelector(
-                ILSP7DigitalAsset.transfer.selector,
-                msg.sender,
-                recipient,
-                tokensToTransfer,
-                true,
-                ""
-            );
-            IERC725X(msg.sender).execute(0, notifier, 0, encodedTx);
+            ILSP7DigitalAsset(notifier).transfer(msg.sender, recipient, tokensToTransfer, true, "");
             return "";
         }
     }
