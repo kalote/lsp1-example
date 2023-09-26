@@ -60,7 +60,7 @@ npx hardhat --network luksoTestnet run scripts/deployLSP1SimpleMethod1.ts # This
 
 ## Gas cost
 
-The gas cost for the custom URD is paid by the address which initiates the transfer. Here is a cost comparison:
+The gas cost for the custom URD is paid by the address which initiates the transfer. One of the difference between both methods is the gas cost. I also wanted to highlights the different type of transfer and their impact on the transaction fees. Here is a comparison:
 
 - LSP7 Transfer without custom URD to a UP - First time: 271K used (https://explorer.execution.testnet.lukso.network/tx/0x986074a099611ffab980bc4be444e56b7cf4816f71dbe9f907d9b2908692a3c8/logs)
 - LSP7 Transfer without custom URD to a UP - Second time: 169K used (https://explorer.execution.testnet.lukso.network/tx/0x7fb141eb59b1341da891c54f03b8a4c716dc0b4cb681753c91545a16f9f21303/logs)
@@ -72,12 +72,11 @@ The gas cost for the custom URD is paid by the address which initiates the trans
 
 ### Why is it more expensive the first time?
 
-This can be explained due to the default URD (present in all UP) updating LSP5 ReceivedAssets keys / values (setData + permission verification of default URD) which cost gas. The second time, the asset is already present in the ReceivedAssets so there's no need to update data & verify permission.
+This can be explained due to the default URD (present in all UP) updating LSP5 ReceivedAssets keys / values (setData + permission verification of default URD) which cost gas. The second time, the asset is already present in the ReceivedAssets so there's no need to update data & verify permission which save up some gas
 
 ### Conclusion
 
-- LSP7 transfer is much more expensive than ERC20 transfer
-- LSP7 transfer to a UP is ~169K
-- LSP7 transfer to a EoA is ~136K
+- LSP7 transfer is more expensive than ERC20 transfer
+- LSP7 transfer to a UP is ~169K while a LSP7 transfer to an EoA is ~136K
 - First time registering assets in LSP5 through default URD can increase the cost by up to 200k
-- Difference method 1 vs method 2 is ~23K
+- Difference between method 1 & method 2 is ~23K
