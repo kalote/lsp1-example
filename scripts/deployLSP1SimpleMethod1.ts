@@ -1,7 +1,7 @@
 import hre from 'hardhat';
 import { ethers } from 'hardhat';
 import * as dotenv from 'dotenv';
-import { ERC725YDataKeys, LSP1_TYPE_IDS, PERMISSIONS } from '@lukso/lsp-smart-contracts';
+import { ERC725YDataKeys, LSP1_TYPE_IDS, PERMISSIONS, OPERATION_TYPES } from '@lukso/lsp-smart-contracts';
 
 // load env vars
 dotenv.config();
@@ -50,14 +50,14 @@ async function main() {
 
   // get the address of the contract that will be created
   const CustomURDAddress = await UP.connect(signer).execute.staticCall(
-    1,
+    OPERATION_TYPES.CREATE,
     ethers.ZeroAddress,
     0,
     fullBytecode,
   );
 
   // deploy LSP1URDForwarder as the UP (signed by the browser extension controller)
-  const tx1 = await UP.connect(signer).execute(1, ethers.ZeroAddress, 0, fullBytecode);
+  const tx1 = await UP.connect(signer).execute(OPERATION_TYPES.CREATE, ethers.ZeroAddress, 0, fullBytecode);
   await tx1.wait();
 
   console.log('✅ Custom URD successfully deployed at address: ', CustomURDAddress);
