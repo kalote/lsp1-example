@@ -3,7 +3,7 @@ pragma solidity ^0.8.4;
 
 // interfaces
 import { IERC725X } from "@erc725/smart-contracts/contracts/interfaces/IERC725X.sol";
-import { ILSP1UniversalReceiver } from "@lukso/lsp-smart-contracts/contracts/LSP1UniversalReceiver/ILSP1UniversalReceiver.sol";
+import { ILSP1UniversalReceiverDelegate } from "@lukso/lsp-smart-contracts/contracts/LSP1UniversalReceiver/ILSP1UniversalReceiverDelegate.sol";
 import { ILSP7DigitalAsset } from "@lukso/lsp-smart-contracts/contracts/LSP7DigitalAsset/ILSP7DigitalAsset.sol";
 
 // modules
@@ -21,7 +21,7 @@ import "@lukso/lsp-smart-contracts/contracts/LSP1UniversalReceiver/LSP1Errors.so
 
 contract LSP1URDForwarder is
     ERC165,
-    ILSP1UniversalReceiver
+    ILSP1UniversalReceiverDelegate
 {
     // For each UP, we set a recipient
     mapping (address => address) recipients;
@@ -72,15 +72,12 @@ contract LSP1URDForwarder is
         return percentages[msg.sender];
     }
 
-    function universalReceiver(
-        bytes32 typeId,
+    function universalReceiverDelegate(
+        address caller, 
+        uint256 /*value*/, 
+        bytes32 /*typeId*/, 
         bytes memory data
-    ) public payable virtual returns (bytes memory) {
-        // CHECK that we did not send any native tokens to the LSP1 Delegate, as it cannot transfer them back.
-        if (msg.value != 0) {
-            revert NativeTokensNotAccepted();
-        }
-
+    ) public virtual returns (bytes memory) {
         // CHECK that the caller is a LSP0 (UniversalProfile)
         // by checking its interface support
         if (
@@ -92,7 +89,7 @@ contract LSP1URDForwarder is
             return "Caller is not a LSP0";
         }
         // GET the notifier (e.g., the LSP7 Token) from the calldata
-        address notifier = address(bytes20(msg.data[msg.data.length - 52:]));
+        address notifier = caller;
 
         // CHECK that notifier is a contract with a `balanceOf` method
         // and that msg.sender (the UP) has a positive balance

@@ -4,14 +4,14 @@
     "build": "hardhat compile --force --show-stack-traces"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
-    "@nomicfoundation/hardhat-verify": "^1.1.1",
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.1",
     "dotenv": "^16.3.1",
-    "hardhat": "^2.17.2",
+    "hardhat": "^2.19.1",
     "prettier": "^3.0.3"
   },
   "dependencies": {
-    "@lukso/lsp-smart-contracts": "^0.11.1",
+    "@lukso/lsp-smart-contracts": "^0.12.1",
     "@openzeppelin/contracts": "^4.9.3"
   }
 }
